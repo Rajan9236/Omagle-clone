@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Omagle Chat</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .chatbox {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #1a1a1a;
+    }
+
+    .chatbox div {
+      margin: 5px 0;
+    }
+
+    .input-area {
+      display: flex;
+      border-top: 2px solid #444;
+      background: #111;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      background: #222;
+      border: none;
+      color: white;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: 2px solid cyan;
+      background: transparent;
+      color: cyan;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: cyan;
+      color: black;
+    }
+
+    .status {
+      padding: 8px;
+      text-align: center;
+      background: #222;
+      font-size: 14px;
+    }
+
+    @media (max-width: 600px) {
+      button, input {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="status">Looking for a partner...</div>
+  <div class="chatbox" id="chatbox"></div>
+  <div class="input-area">
+    <input type="text" id="input" placeholder="Type a message...">
+    <button onclick="send()">Send</button>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io("http://localhost:3000");
+    const chatbox = document.getElementById("chatbox");
+    const input = document.getElementById("input");
+    const status = document.querySelector(".status");
+
+    function append(msg, cls = '') {
+      const div = document.createElement("div");
+      div.textContent = msg;
+      if (cls) div.classList.add(cls);
+      chatbox.appendChild(div);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    socket.on("partnerFound", () => {
+      status.textContent = "Connected to a stranger!";
+      append("You are now chatting with a stranger.");
+    });
+
+    socket.on("message", (msg) => {
+      append("Stranger: " + msg);
+    });
+
+    socket.on("partnerLeft", () => {
+      append("Stranger disconnected.");
+      status.textContent = "Partner disconnected. Refresh to find another.";
+    });
+
+    function send() {
+      const msg = input.value.trim();
+      if (!msg) return;
+      append("You: " + msg);
+      socket.emit("message", msg);
+      input.value = "";
+    }
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") send();
+    });
+  </script>
+</body>
+</html>
